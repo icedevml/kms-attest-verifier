@@ -1,10 +1,12 @@
 import argparse
+import hashlib
 
 from kms_certs.verify_attestation_chains import verify as verify_google_attest
-from marvell_hsm.hsm_checks import hsm_check_priv_key_attrs, hsm_get_key_public_numbers, hsm_get_public_key_pem
+from marvell_hsm.hsm_checks import hsm_check_priv_key_attrs, hsm_get_key_public_numbers, hsm_get_public_key_pem, \
+    hsm_get_public_key_der
 from marvell_hsm.hsm_v2_parse import get_priv_key_attrs
-from x509_tools.cert_processing import cert_load_file, cert_get_key_public_numbers, cert_get_public_key_pem
-from x509_tools.csr_processing import csr_load_file, csr_get_public_key_pem, csr_get_key_public_numbers
+from x509_tools.cert_processing import cert_load_file, cert_get_public_key_der
+from x509_tools.csr_processing import csr_load_file, csr_get_public_key_der
 
 
 def main():
@@ -21,33 +23,37 @@ def main():
     hsm_pub_numbers = hsm_get_key_public_numbers(hsm_privkey_attrs, args.ec_curve)
 
     print('[#] Public key from the attestation file')
+    public_key_der = hsm_get_public_key_der(hsm_pub_numbers)
+    public_key_sha256 = hashlib.sha256(public_key_der).hexdigest()
+
+    print(f'-> Public key SHA-256 fingerprint (DER/SubjectPublicKeyInfo):')
+    print(public_key_sha256)
+    print('-> Public key in PEM format:')
     print(hsm_get_public_key_pem(hsm_pub_numbers).strip())
     print()
 
     if args.csr_file:
         print('[#] Verify public key in CSR file')
         csr = csr_load_file(args.csr_file)
-        csr_pub_numbers = csr_get_key_public_numbers(csr)
+        csr_pub_der = csr_get_public_key_der(csr)
+        csr_pub_sha256 = hashlib.sha256(csr_pub_der).hexdigest()
 
-        if hsm_pub_numbers != csr_pub_numbers:
+        if public_key_sha256 != csr_pub_sha256:
             raise RuntimeError('Key in the CSR doesn\'t match the attestation file.')
 
-        enc = csr_get_public_key_pem(csr)
         print('OK - Public key is matching between the provided CSR and the attestation file.')
-        print(enc)
         print()
 
     if args.cert_file:
         print('[#] Verify public key in X.509 certificate file')
         cert = cert_load_file(args.cert_file)
-        cert_pub_numbers = cert_get_key_public_numbers(cert)
+        cert_pub_der = cert_get_public_key_der(cert)
+        cert_pub_sha256 = hashlib.sha256(cert_pub_der).hexdigest()
 
-        if hsm_pub_numbers != cert_pub_numbers:
+        if public_key_sha256 != cert_pub_sha256:
             raise RuntimeError('Key in the X.509 certificate doesn\'t match the attestation file.')
 
-        enc = cert_get_public_key_pem(cert)
         print('OK - Public key is matching between the provided X.509 certificate and the attestation file.')
-        print(enc)
         print()
 
     if args.attestation_chain:

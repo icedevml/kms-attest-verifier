@@ -7,6 +7,8 @@ Contains custom unofficial modifications introduced for the purpose of this proj
 """
 import binascii
 import gzip
+import hashlib
+import os
 import struct
 
 # Attestation structure is big endian.
@@ -33,12 +35,22 @@ SIGNATURE_SIZE = 256
 
 
 def get_contents_decompress_if_needed(attestation_file):
+    print('[#] Loading attestation file: ' + os.path.basename(attestation_file))
+
+    with open(attestation_file, 'rb') as f:
+        raw_file = f.read()
+        file_sha256 = hashlib.sha256(raw_file).hexdigest()
+        file_sha512 = hashlib.sha512(raw_file).hexdigest()
+
+        print(f'-> Attestation file SHA-256:')
+        print(file_sha256)
+
+    print()
+
     try:
-        with gzip.open(attestation_file, 'rb') as f:
-            return f.read()
-    except IOError:
-        with open(attestation_file, 'rb') as f:
-            return f.read()
+        return gzip.decompress(raw_file)
+    except OSError:
+        return raw_file
 
 
 def parse_headers(attestation):

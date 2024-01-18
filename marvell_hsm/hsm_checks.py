@@ -28,8 +28,14 @@ def hsm_check_priv_key_attrs(priv_key_attrs: dict) -> None:
 
     for assertion in ASSERTIONS:
         attr_id, expected_val, description = assertion
-        check_result = priv_key_attrs[attr_id] == expected_val
+        attr_val = priv_key_attrs[attr_id]
+        check_result = attr_val == expected_val
         check_result_txt = 'OK' if check_result else 'FAILED'
+
+        attr_hex = hex(attr_id)
+        attr_val_txt = attr_val.decode('ascii')
+
+        print(f'-> Attestation attribute {attr_hex} = {attr_val_txt}')
         print(f'{check_result_txt} - {description}')
 
         if not check_result:
@@ -71,3 +77,7 @@ def hsm_get_key_public_numbers(priv_key_attrs: dict, curve_name: Optional[str]) 
 
 def hsm_get_public_key_pem(hsm_pub_numbers: RSAPublicNumbers) -> str:
     return hsm_pub_numbers.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode('ascii')
+
+
+def hsm_get_public_key_der(hsm_pub_numbers: RSAPublicNumbers) -> bytes:
+    return hsm_pub_numbers.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
