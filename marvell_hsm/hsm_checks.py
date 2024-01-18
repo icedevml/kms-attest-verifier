@@ -1,9 +1,9 @@
 import binascii
-from typing import Union
+from typing import Union, Optional
 
 from cryptography.hazmat.primitives._serialization import Encoding, PublicFormat
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicNumbers, EllipticCurvePublicKey, \
-    SECP256K1
+    _CURVE_TYPES as EC_CURVE_TYPES
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 
 from marvell_hsm.hsm_attr_list import OBJ_ATTR_PRIVATE, OBJ_ATTR_EXTRACTABLE, OBJ_ATTR_LOCAL, \
@@ -38,7 +38,7 @@ def hsm_check_priv_key_attrs(priv_key_attrs: dict) -> None:
     print()
 
 
-def hsm_get_key_public_numbers(priv_key_attrs: dict) -> Union[RSAPublicNumbers, EllipticCurvePublicNumbers]:
+def hsm_get_key_public_numbers(priv_key_attrs: dict, curve_name: Optional[str]) -> Union[RSAPublicNumbers, EllipticCurvePublicNumbers]:
     """
     Get public parameters of the key based on the HSM attributes from the attest.
     """
@@ -46,13 +46,25 @@ def hsm_get_key_public_numbers(priv_key_attrs: dict) -> Union[RSAPublicNumbers, 
     key_type = priv_key_attrs[OBJ_ATTR_KEY_TYPE]
 
     if key_type == b'00':
+        if curve_name:
+            raise RuntimeError("EC curve name was provided but the key is an RSA key.")
+
         att_n = int(priv_key_attrs[OBJ_ATTR_MODULUS].decode('ascii'), 16)
         att_e = int(priv_key_attrs[OBJ_ATTR_PUBLIC_EXPONENT].decode('ascii'), 16)
 
         return RSAPublicNumbers(e=att_e, n=att_n)
     elif key_type == b'03':
+        if not curve_name:
+            raise RuntimeError("No curve name was provided, although the key is an EC key.")
+
+        if curve_name not in EC_CURVE_TYPES:
+            supported_curve_names = ', '.join(list(EC_CURVE_TYPES.keys()))
+            raise RuntimeError("Unsupported curve name, must be one of: " + supported_curve_names)
+
+        curve_class = EC_CURVE_TYPES[curve_name]
+
         pub_key = binascii.unhexlify(priv_key_attrs[OBJ_ATTR_MODULUS].decode('ascii'))
-        return EllipticCurvePublicKey.from_encoded_point(curve=SECP256K1(), data=pub_key).public_numbers()
+        return EllipticCurvePublicKey.from_encoded_point(curve=curve_class(), data=pub_key).public_numbers()
 
     raise RuntimeError(f"Unsupported subclass key type: {key_type}")
 

@@ -11,13 +11,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--attestation-file', help='The name of attestation file.', required=True)
     parser.add_argument('--attestation-chain', help='The name of attestation certificate chain file.')
+    parser.add_argument('--ec-curve', help='Name of the elliptic curve in case when the key in question is an EC key.')
     parser.add_argument('--csr-file', help='The name of CSR file.')
     parser.add_argument('--cert-file', help='The name of the X.509 certificate file.')
     args = parser.parse_args()
 
     hsm_privkey_attrs = get_priv_key_attrs(args.attestation_file)
     hsm_check_priv_key_attrs(hsm_privkey_attrs)
-    hsm_pub_numbers = hsm_get_key_public_numbers(hsm_privkey_attrs)
+    hsm_pub_numbers = hsm_get_key_public_numbers(hsm_privkey_attrs, args.ec_curve)
 
     print('[#] Public key from the attestation file')
     print(hsm_get_public_key_pem(hsm_pub_numbers).strip())

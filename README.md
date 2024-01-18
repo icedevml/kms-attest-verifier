@@ -33,6 +33,9 @@ python3 audit_hsm.py \
     --attestation-chain MyRing-MyKey1-1-combined-chain.pem
 ```
 
+**Note on EC keys:** If your key is an ECC key, you also need to provide `--ec-curve` parameter and specify
+the name of the curve that you are using.
+
 Perform the checks described above and additionally compare the public key in the attestation file with
 the public key used to sign the particular CSR file (useful as an additional check before the CSR is submitted
 to the CA):
