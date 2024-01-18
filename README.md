@@ -17,6 +17,12 @@ it is mandatory for the certificate's private key to be securely generated on th
 2. Create and activate the virtualenv.
 3. Run `pip3 install -r requirements.txt`
 
+## Obtaining KMS attestations
+
+The attestation bundles for the keys hosted in Google Cloud KMS can be downloaded by navigating into the key properties
+in the Cloud Console, and choosing "Actions" -> "Verify attestation" -> "Download attestation bundle" under the target
+key version to be audited.
+
 ## Usage
 
 Check whether the attestation file is correctly signed by Google and HSM manufacturer, and whether the corresponding
