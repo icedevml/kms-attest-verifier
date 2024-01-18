@@ -6,6 +6,11 @@ This tool allows to verify the HSM attestation files provided by Google Cloud KM
 * Whether the attestation file is correctly signed by the HSM manufacturer and Google;
 * Whether the attestation file is related with the same private key as the one that was used to sign the provided CSR or X.509 Certificate;
 
+## Purpose of this tool
+
+The tool was developed in order to help internal auditors to verify compliance with CA/B Forum requirements whenever
+it is mandatory for the certificate's private key to be securely generated on the HSM.
+
 ## Installation
 
 1. Clone the repository.
